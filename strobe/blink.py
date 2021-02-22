@@ -4,7 +4,7 @@ import os
 
 blinkDuration = float(os.getenv('BLINK_DURATION', 0.05))
 
-relay_pins = [26, 19, 13, 6]
+relay_pins = [26, 19, 13, 6, 5, 21, 20, 16]
 
 
 def blink():
