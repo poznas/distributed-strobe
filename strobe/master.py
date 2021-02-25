@@ -1,15 +1,12 @@
-import sys
+import itertools
 import json
-import time
+import os
+import sys
 
 from datetime import datetime
-
-import os
 from typing import List, Dict
 
 from blink import setup_blinkers, cleanup_blinkers, blink
-import itertools
-
 from scheduler import register_tasks, launch, purge
 
 NodeID = str
@@ -57,6 +54,13 @@ class Master(object):
         purge()
 
 
+def next_full_minute():
+    now = datetime.now()
+    next_minute = datetime(year=now.year, month=now.month, day=now.day, hour=now.hour, minute=now.minute + 1)
+
+    return datetime.timestamp(next_minute) * 1000
+
+
 sourceSequence = json.loads(open(sys.argv[1], 'r').read())
 
 master = Master() \
@@ -65,7 +69,7 @@ master = Master() \
     .publish_offsets()
 
 try:
-    master.start(time.time() * 1000)
+    master.start(next_full_minute())
 finally:
     try:
         master.stop()

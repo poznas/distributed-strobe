@@ -1,8 +1,8 @@
 import sched
-import time
-from datetime import datetime, timedelta
 import threading
+import time
 
+from datetime import datetime
 from typing import List
 
 
@@ -19,7 +19,8 @@ events = []
 
 
 def register_tasks(start_time_ms: float, offsets: List[int], action):
-    print(f"▶ register_tasks [start_time: {start_time_ms}, offsets.length: {len(offsets)}]")
+    date_str = datetime.fromtimestamp(start_time_ms // 1000)
+    print(f"▶ register_tasks [start_time: {date_str}, offsets.length: {len(offsets)}]")
 
     def register(offset: int):
         scheduler.enterabs(start_time_ms + offset, 1, action, ())
