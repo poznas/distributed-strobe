@@ -20,7 +20,7 @@ events = []
 
 def register_tasks(start_time_ms: float, offsets: List[int], action):
     date_str = datetime.fromtimestamp(start_time_ms // 1000)
-    print(f"▶ register_tasks [start_time: {date_str}, offsets.length: {len(offsets)}]")
+    print(f"▶ register_tasks [start_time: {date_str}, offsets.length: {len(offsets)}, fun: {action.__name__}]")
 
     def register(offset: int):
         scheduler.enterabs(start_time_ms + offset, 1, action, ())

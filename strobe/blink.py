@@ -1,8 +1,9 @@
-import RPi.GPIO as GPIO
-from time import sleep
 import os
+from time import sleep
 
-blinkDuration = float(os.getenv('BLINK_DURATION', 0.05))
+import RPi.GPIO as GPIO
+
+blinkDuration = float(os.getenv('BLINK_DURATION', 0.03))
 
 relay_pins = [26, 19, 13, 6, 5, 21, 20, 16]
 

@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Dict
 
 from blink import setup_blinkers, cleanup_blinkers, blink
+from music_player import load_audio_file, play_music, stop_music, PLAYBACK_LATENCY
 from scheduler import register_tasks, launch, purge
 
 NodeID = str
@@ -43,15 +44,22 @@ class Master(object):
 
         return self
 
+    def load_audio(self, filename):
+        if filename is not None:
+            load_audio_file(filename)
+        return self
+
     def publish_offsets(self):
         return self
 
     def start(self, start_time_ms: float):
         register_tasks(start_time_ms, self.subsequences[nodeID], blink)
+        register_tasks(start_time_ms - PLAYBACK_LATENCY, [0] * 1, play_music)
         launch().join()
 
     def stop(self):
         purge()
+        stop_music()
 
 
 def next_full_minute():
@@ -62,10 +70,12 @@ def next_full_minute():
 
 
 sourceSequence = json.loads(open(sys.argv[1], 'r').read())
+audioFile = sys.argv[2] if len(sys.argv) >= 3 else None
 
 master = Master() \
     .register_slaves() \
     .compile_sequence(sourceSequence) \
+    .load_audio(audioFile) \
     .publish_offsets()
 
 try:

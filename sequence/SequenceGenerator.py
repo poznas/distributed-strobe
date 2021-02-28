@@ -3,12 +3,12 @@
 """
 Converts .srt into array of offsets with labels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Usage: python SequenceGenerator.py test-davinci-resolve-output-tatu.srt
+Usage: python SequenceGenerator.py tatu.srt
 """
-import sys
-import re
 import json
 import os
+import re
+import sys
 
 from typing import Dict
 
