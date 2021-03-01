@@ -6,23 +6,18 @@ import sys
 from datetime import datetime
 from typing import List, Dict
 
-from blink import setup_blinkers, cleanup_blinkers, blink
 from music_player import load_audio_file, play_music, stop_music, PLAYBACK_LATENCY
-from scheduler import register_tasks, launch, purge
+from scheduler import register_tasks
+from strobe.strobe_node import StrobeNode, NodeID
 
-NodeID = str
-
-MASTER_NODE_ID = '1'
+MASTER_NODE_ID = 'M'
 
 nodeID: NodeID = os.getenv('STROBE_NODE_ID', MASTER_NODE_ID)
 
 
-class Master(object):
+class Master(StrobeNode):
     subsequences: Dict[NodeID, List[int]] = {}
     slaves: Dict[NodeID, str] = {}
-
-    def __init__(self):
-        setup_blinkers()
 
     def register_slaves(self):
         return self
@@ -42,6 +37,8 @@ class Master(object):
 
             self.subsequences[target_node].extend(offsets_alone(events))
 
+        self.sequence = self.subsequences[nodeID]
+
         return self
 
     def load_audio(self, filename):
@@ -52,13 +49,13 @@ class Master(object):
     def publish_offsets(self):
         return self
 
-    def start(self, start_time_ms: float):
-        register_tasks(start_time_ms, self.subsequences[nodeID], blink)
+    def register_tasks(self, start_time_ms: float):
+        super().register_tasks(start_time_ms)
         register_tasks(start_time_ms - PLAYBACK_LATENCY, [0] * 1, play_music)
-        launch().join()
+        return self
 
     def stop(self):
-        purge()
+        super().stop()
         stop_music()
 
 
@@ -69,19 +66,18 @@ def next_full_minute():
     return datetime.timestamp(next_minute) * 1000
 
 
-sourceSequence = json.loads(open(sys.argv[1], 'r').read())
-audioFile = sys.argv[2] if len(sys.argv) >= 3 else None
+if __name__ == '__main__':
+    sourceSequence = json.loads(open(sys.argv[1], 'r').read())
+    audioFile = sys.argv[2] if len(sys.argv) >= 3 else None
 
-master = Master() \
-    .register_slaves() \
-    .compile_sequence(sourceSequence) \
-    .load_audio(audioFile) \
-    .publish_offsets()
+    master = Master() \
+        .register_slaves() \
+        .compile_sequence(sourceSequence) \
+        .load_audio(audioFile) \
+        .publish_offsets() \
+        .register_tasks(next_full_minute())
 
-try:
-    master.start(next_full_minute())
-finally:
     try:
-        master.stop()
+        master.start()
     finally:
-        cleanup_blinkers()
+        master.stop()
