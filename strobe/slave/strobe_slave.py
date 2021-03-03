@@ -2,7 +2,7 @@ import os
 
 from typing import List
 
-from strobe_node import StrobeNode, NodeID
+from strobe.strobe_node import StrobeNode, NodeID
 from util.network_utils import host_ip
 
 

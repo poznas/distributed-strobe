@@ -26,12 +26,12 @@ def cleanup_blinkers():
     GPIO.cleanup()
 
 
-# setup_blinkers()
-#
-# try:
-#     while True:
-#         blink()
-#         sleep(1)
-# except KeyboardInterrupt:
-#     pass
-# cleanup_blinkers()
+if __name__ == '__main__':
+    setup_blinkers()
+
+    try:
+        while True:
+            blink()
+            sleep(1)
+    finally:
+        cleanup_blinkers()
