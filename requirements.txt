@@ -5,3 +5,4 @@ shed==0.3.2
 pygame~=1.9.4.post1
 
 flask==1.1.2
+requests==2.21.0

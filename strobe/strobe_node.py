@@ -1,7 +1,7 @@
 from typing import List
 
-from blink import setup_blinkers, cleanup_blinkers, blink
-from scheduler import register_tasks, launch, purge
+from strobe.blink import setup_blinkers, blink, cleanup_blinkers
+from strobe.scheduler import register_tasks, launch, purge
 
 NodeID = str
 
@@ -15,7 +15,7 @@ class StrobeNode(object):
         return self
 
     def start(self):
-        launch().join()
+        launch()
 
     def stop(self):
         purge()

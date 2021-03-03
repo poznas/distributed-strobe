@@ -32,6 +32,5 @@ def cleanup_blinkers():
 #     while True:
 #         blink()
 #         sleep(1)
-# except KeyboardInterrupt:
-#     pass
-# cleanup_blinkers()
+# finally:
+#     cleanup_blinkers()

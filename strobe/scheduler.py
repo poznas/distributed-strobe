@@ -1,3 +1,4 @@
+import os
 import sched
 import threading
 import time
@@ -29,17 +30,24 @@ def register_tasks(start_time_ms: float, offsets: List[int], action):
 
 
 def purge():
-    print("❌ purge events")
-    for event in events:
-        try:
-            scheduler.cancel(event)
-        except ValueError:
-            pass
-    events.clear()
+    try:
+        for event in events:
+            try:
+                scheduler.cancel(event)
+            except ValueError:
+                pass
+    finally:
+        events.clear()
+        print("❌ purge events")
 
 
 def launch() -> threading.Thread:
     print("▶ run scheduler")
-    t = threading.Thread(target=scheduler.run)
+
+    def run_scheduler():
+        os.nice(-20)
+        scheduler.run()
+
+    t = threading.Thread(target=run_scheduler)
     t.start()
     return t
