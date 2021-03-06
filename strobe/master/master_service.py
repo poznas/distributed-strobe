@@ -1,13 +1,18 @@
 #!flask/bin/python
 import sys
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 from strobe_master import StrobeMaster
 
 master = None
 
 app = Flask(__name__)
+
+
+@app.route('/', methods=['GET'])
+def master_ui():
+    return render_template('index.html', slaves=master.slave_ips.items())
 
 
 @app.route('/master/slaves', methods=['PUT'])
@@ -38,4 +43,4 @@ def stop_execution():
 if __name__ == '__main__':
     master = StrobeMaster(sys.argv[1], sys.argv[2])
 
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0')

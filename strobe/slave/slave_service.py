@@ -36,4 +36,4 @@ def get_chrony_tracking():
 
 if __name__ == '__main__':
     start_heartbeat(StrobeSlave.slave_id())
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0')
