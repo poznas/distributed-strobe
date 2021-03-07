@@ -14,14 +14,47 @@
 <body>
 
 <div class="container">
-    <h1>Slaves</h1>
-    {% for slave in slaves %}
-    <a href="#">
-        <h2>{{ slave[0] }}</h2>
-    </a>
-    <span class="badge badge-primary">{{ slave[1] }}</span>
+    <h2>Slaves</h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">ip</th>
+            <th scope="col">status</th>
+            <th scope="col">wifi</th>
+            <th scope="col">chrony</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for id, details in slaves %}
+        <tr>
+            <th scope="row"><h2>{{ id }}</h2></th>
+            <td><span class="badge badge-light">{{ details['ip'] }}</span></td>
+
+            {% if details['status'] == 'ACTIVE' %}
+            <td><span class="badge badge-success">{{ _time(details['last_update']) }}</span></td>
+            {% else %}
+            <td><span class="badge badge-danger">{{ _time(details['last_update']) }}</span></td>
+            {% endif %}
+
+            <td>
+                Signal level: {{ details['wifi']['Signal level'] }}
+                <br>
+                Link Quality: {{ details['wifi']['Link Quality'] }}
+            </td>
+
+            <td>
+                System time: {{ details['chrony']['System time'] }}
+                <br>
+                Last probe (UTC): {{ details['chrony']['Ref time (UTC)'] }}
+            </td>
+        </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
     <hr>
-    {% endfor %}
+
 </div>
 
 

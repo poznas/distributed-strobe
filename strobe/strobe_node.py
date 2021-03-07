@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List
 
 from strobe.blink import setup_blinkers, blink, cleanup_blinkers
@@ -20,3 +21,8 @@ class StrobeNode(object):
     def stop(self):
         purge()
         cleanup_blinkers()
+
+
+class NodeStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    LOST = 'LOST'
