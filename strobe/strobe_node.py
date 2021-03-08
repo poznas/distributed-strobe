@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List
 
 from strobe.blink import setup_blinkers, blink, cleanup_blinkers
-from strobe.scheduler import register_tasks, launch, purge
+from strobe.sequence_scheduler import register_tasks, sequence_launch, sequence_purge
 
 NodeID = str
 
@@ -16,10 +16,10 @@ class StrobeNode(object):
         return self
 
     def start(self):
-        launch()
+        sequence_launch()
 
     def stop(self):
-        purge()
+        sequence_purge()
         cleanup_blinkers()
 
 

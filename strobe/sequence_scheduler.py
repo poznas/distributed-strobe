@@ -6,6 +6,8 @@ import time
 from datetime import datetime
 from typing import List
 
+from util.logger import logger
+
 
 def time_ms():
     return time.time_ns() // 1_000_000
@@ -24,12 +26,12 @@ def register_tasks(start_time_ms: float, offsets: List[int], action):
     print(f"▶ register_tasks [start_time: {date_str}, offsets.length: {len(offsets)}, fun: {action.__name__}]")
 
     def register(offset: int):
-        scheduler.enterabs(start_time_ms + offset, 1, action, ())
+        return scheduler.enterabs(start_time_ms + offset, 1, action, ())
 
     events.extend(list(map(register, offsets)))
 
 
-def purge():
+def sequence_purge():
     try:
         for event in events:
             try:
@@ -38,16 +40,20 @@ def purge():
                 pass
     finally:
         events.clear()
-        print("❌ purge events")
+        logger.info("❌ purge events")
 
 
-def launch() -> threading.Thread:
-    print("▶ run scheduler")
+def sequence_launch() -> threading.Thread:
 
     def run_scheduler():
+        logger.info("▶ run scheduler")
         os.nice(-20)
         scheduler.run()
 
     t = threading.Thread(target=run_scheduler)
     t.start()
     return t
+
+
+def sequence_scheduler_empty() -> bool:
+    return scheduler.empty()

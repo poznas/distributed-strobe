@@ -2,7 +2,7 @@
 import sys
 
 from datetime import datetime
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, abort
 
 from strobe_master import StrobeMaster
 
@@ -17,7 +17,15 @@ def _time(timestamp: float):
 
 @app.route('/', methods=['GET'])
 def master_ui():
-    return render_template('index.html', slaves=master.slaves.items(), _time=_time)
+    return render_template('index.html',
+                           slaves=master.slaves.items(),
+                           active_sequence=master.active_sequence,
+                           _time=_time)
+
+
+@app.route('/master/slaves/<slave_id>', methods=['GET'])
+def slave_details_ui(slave_id):
+    return render_template('slave_details.html', slave=master.slaves[slave_id])
 
 
 @app.route('/master/slaves', methods=['PUT'])
@@ -27,22 +35,25 @@ def register_slave():
 
 
 @app.route('/master/sequence/publish', methods=['POST'])
-def register_execution():
+def publish_offsets():
     master.publish_offsets()
-    return jsonify(success=True)
+    return redirect('/')
 
 
-@app.route('/master/execution', methods=['POST'], endpoint='start')
+@app.route('/master/execution/start', methods=['POST'], endpoint='start')
 def register_execution():
-    master.register_tasks(float(request.args.get('start_time')))
+    try:
+        master.register_execution(request.form.get('seconds_from_now'), request.form.get('start_at'))
+    except ValueError as err:
+        abort(400, err)
     master.start()
-    return jsonify(success=True)
+    return redirect('/')
 
 
-@app.route('/master/execution', methods=['DELETE'], endpoint='stop')
+@app.route('/master/execution/stop', methods=['POST'], endpoint='stop')
 def stop_execution():
     master.stop()
-    return jsonify(success=True)
+    return redirect('/')
 
 
 if __name__ == '__main__':

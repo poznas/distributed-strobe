@@ -58,9 +58,8 @@ def heartbeat(sc=s):
 
     try:
         details = details_provider.data()
-        logger.info(details)
         rs = requests.put(url, json=details)
-        logger.info(f"PUT {url} -> {rs.status_code}")
+        logger.info(f"PUT {url} {list(details.keys())} -> {rs.status_code}")
 
     except RequestException as e:
         logger.error(e)

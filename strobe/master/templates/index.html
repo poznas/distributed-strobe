@@ -15,7 +15,7 @@
 
 <div class="container">
     <h2>Slaves</h2>
-    <table class="table">
+    <table class="table table-striped">
         <thead>
         <tr>
             <th scope="col">ID</th>
@@ -28,7 +28,11 @@
         <tbody>
         {% for id, details in slaves %}
         <tr>
-            <th scope="row"><h2>{{ id }}</h2></th>
+            <th scope="row">
+                <a href="{{ url_for('slave_details_ui', slave_id=id) }}">
+                    <h2>{{ id }}</h2>
+                </a>
+            </th>
             <td><span class="badge badge-light">{{ details['ip'] }}</span></td>
 
             {% if details['status'] == 'ACTIVE' %}
@@ -54,6 +58,41 @@
         </tbody>
     </table>
     <hr>
+
+    <form action="/master/sequence/publish" method="post">
+        <button type="submit" class="btn btn-info btn-lg">Publish</button>
+    </form>
+
+    <form action="/master/execution/start" method="post">
+        <label for="seconds_from_now">Seconds from now:</label>
+        <input type="number" id="seconds_from_now" name="seconds_from_now" value="10" required>
+
+        <button type="submit" class="btn btn-primary btn-lg">Start in</button>
+    </form>
+
+    <form action="/master/execution/start" method="post">
+        <label for="start_at">Start Time:</label>
+        <input type="time" id="start_at" name="start_at" required>
+
+        <button type="submit" class="btn btn-primary btn-lg">Start at</button>
+    </form>
+
+    {% if 'start_time' in active_sequence %}
+    <hr>
+    <div class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"
+             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+            {{ _time(active_sequence['start_time']) }}
+        </div>
+    </div>
+    <hr>
+    {% endif %}
+
+    <form action="/master/execution/stop" method="post">
+
+        <button type="submit" class="btn btn-danger btn-lg">Stop</button>
+    </form>
+
 
 </div>
 
