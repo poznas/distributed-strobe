@@ -14,4 +14,4 @@ class StrobeSlave(StrobeNode):
 
     def set_sequence(self, sequence: List[int]):
         self.stop()
-        self.sequence = sequence
+        self._sequence = sequence

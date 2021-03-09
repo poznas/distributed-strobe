@@ -1,25 +1,31 @@
+import os
+
 from enum import Enum
 from typing import List
 
 from strobe.blink import setup_blinkers, blink, cleanup_blinkers
-from strobe.sequence_scheduler import register_tasks, sequence_launch, sequence_purge
+from strobe.sequence_scheduler import SequenceScheduler
 
 NodeID = str
 
+MIN_EXECUTION_WAIT_TIME = os.getenv('MIN_EXECUTION_WAIT_TIME', 10)
+
 
 class StrobeNode(object):
-    sequence: List[int] = []
+    _sequence: List[int] = []
+    _sequence_scheduler: SequenceScheduler = SequenceScheduler()
+
 
     def register_tasks(self, start_time_ms: float):
         setup_blinkers()
-        register_tasks(start_time_ms, self.sequence, blink)
+        self._sequence_scheduler.register_tasks(start_time_ms, self._sequence, blink)
         return self
 
     def start(self):
-        sequence_launch()
+        self._sequence_scheduler.launch()
 
     def stop(self):
-        sequence_purge()
+        self._sequence_scheduler.purge()
         cleanup_blinkers()
 
 

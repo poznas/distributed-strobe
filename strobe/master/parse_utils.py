@@ -1,9 +1,6 @@
-import os
-
 from datetime import datetime
 
-
-MIN_EXECUTION_WAIT_TIME = os.getenv('MIN_EXECUTION_WAIT_TIME', 10)
+from strobe.strobe_node import MIN_EXECUTION_WAIT_TIME
 
 
 def compute_start_time(seconds_from_now: str, start_at: str) -> float:  # seconds

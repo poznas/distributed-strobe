@@ -9,8 +9,7 @@ from requests import RequestException
 from typing import List, Dict
 
 from strobe.master.parse_utils import compute_start_time
-from strobe.music_player import load_audio_file, play_music, stop_music, PLAYBACK_LATENCY
-from strobe.sequence_scheduler import register_tasks, sequence_scheduler_empty
+from strobe.music_player import load_audio_file, play_music, PLAYBACK_LATENCY
 from strobe.strobe_node import StrobeNode, NodeID, NodeStatus
 from util.logger import logger
 
@@ -25,16 +24,18 @@ MIN_EXECUTION_WAIT_TIME = 10  # seconds
 class StrobeMaster(StrobeNode):
     nodeID: NodeID = os.getenv('STROBE_NODE_ID', MASTER_NODE_ID)
 
+    _audio_path: str = ""
+
     subsequences: Dict[NodeID, List[int]] = {}
     _slaves: Dict[NodeID, Dict] = {}
 
-    _active_sequence = {}
+    _active_sequence_meta = {}
 
     def __init__(self, source_sequence_path, audio_path):
         source_sequence = json.loads(open(source_sequence_path, 'r').read())
 
         self.compile_sequence(source_sequence)
-        load_audio_file(audio_path)
+        self._audio_path = audio_path
 
 
     def compile_sequence(self, source_sequence: List[dict]):
@@ -75,7 +76,7 @@ class StrobeMaster(StrobeNode):
 
 
     def publish_offsets(self):
-        self.sequence = []
+        self._sequence = []
 
         for ID, offsets in self.subsequences.items():
 
@@ -85,7 +86,7 @@ class StrobeMaster(StrobeNode):
                 logger.info(f"PUT {url} [{len(offsets)}] -> {rs.status_code}")
             else:
                 logger.warn(f"{ID} is not an active slave, assigning offsets to master")
-                self.sequence.extend(offsets)
+                self._sequence.extend(offsets)
 
 
     def register_execution(self, seconds_from_now: str, start_at: str):
@@ -104,20 +105,21 @@ class StrobeMaster(StrobeNode):
                 raise e
 
         super().register_tasks(start_time_ms)
-        register_tasks(start_time_ms - PLAYBACK_LATENCY, [0] * 1, play_music)
 
-        self._active_sequence['start_time'] = start_time
+        self._sequence_scheduler.register_tasks(0, [0] * 1, lambda: load_audio_file(self._audio_path))
+        self._sequence_scheduler.register_tasks(start_time_ms - PLAYBACK_LATENCY, [0] * 1, play_music)
+
+        self._active_sequence_meta['start_time'] = start_time
 
     @property
     def active_sequence(self):
-        if sequence_scheduler_empty():
-            self._active_sequence = {}
-        return self._active_sequence
+        if self._sequence_scheduler.empty():
+            self._active_sequence_meta = {}
+        return self._active_sequence_meta
 
 
     def stop(self):
         super().stop()
-        stop_music()
 
         for ID in self.active_slaves_ids():
             url = f"{self._slaves[ID]['baseURL']}/slave/execution"
