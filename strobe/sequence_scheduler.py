@@ -1,11 +1,10 @@
 import os
 import sched
+import signal
 import threading
 import time
-from multiprocessing import Process
-
-import signal
 from datetime import datetime
+from multiprocessing import Process
 from typing import List
 
 from util.logger import logger
@@ -54,7 +53,7 @@ class SequenceScheduler:
                 except ValueError:
                     pass
             try:
-                os.kill(self._pid, signal.SIGTERM)
+                os.kill(self._pid, signal.SIGKILL)
             except ProcessLookupError as e:
                 logger.warn(e)
         finally:
