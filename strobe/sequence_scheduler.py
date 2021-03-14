@@ -29,6 +29,9 @@ class SequenceScheduler:
     _events = []
     _pid = 0
 
+    def register_task(self, start_time_ms: float, action):
+        self.register_tasks(start_time_ms, [0] * 1, action)
+
 
     def register_tasks(self, start_time_ms: float, offsets: List[int], action):
         date_str = datetime.fromtimestamp(start_time_ms // 1000)

@@ -3,13 +3,13 @@ import itertools
 import json
 import os
 import time
+from typing import List, Dict
 
 import requests
 from requests import RequestException
-from typing import List, Dict
 
 from strobe.master.parse_utils import compute_start_time
-from strobe.music_player import load_audio_file, play_music, PLAYBACK_LATENCY
+from strobe.music_player import load_audio_file, play_music, PLAYBACK_LATENCY, init_mixer, register_countdown
 from strobe.strobe_node import StrobeNode, NodeID, NodeStatus
 from util.logger import logger
 
@@ -104,10 +104,14 @@ class StrobeMaster(StrobeNode):
                 self.stop()
                 raise e
 
-        super().register_tasks(start_time_ms)
+        self._sequence_scheduler.register_task(0, init_mixer)
+        self._sequence_scheduler.register_task(1, lambda: load_audio_file(self._audio_path))
 
-        self._sequence_scheduler.register_tasks(0, [0] * 1, lambda: load_audio_file(self._audio_path))
-        self._sequence_scheduler.register_tasks(start_time_ms - PLAYBACK_LATENCY, [0] * 1, play_music)
+        register_countdown(lambda delay_seconds, fun: self._sequence_scheduler.register_task(
+            start_time_ms - PLAYBACK_LATENCY + (delay_seconds * 1000), fun))
+
+        self._sequence_scheduler.register_task(start_time_ms - PLAYBACK_LATENCY, play_music)
+        super().register_tasks(start_time_ms)
 
         self._active_sequence_meta['start_time'] = start_time
 
