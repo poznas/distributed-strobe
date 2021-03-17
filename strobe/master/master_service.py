@@ -1,7 +1,7 @@
 #!flask/bin/python
 import sys
-
 from datetime import datetime
+
 from flask import Flask, request, jsonify, render_template, redirect, abort
 
 from strobe_master import StrobeMaster
@@ -19,6 +19,7 @@ def _time(timestamp: float):
 def master_ui():
     return render_template('index.html',
                            slaves=master.slaves.items(),
+                           available_sequences=master.available_sequences,
                            active_sequence=master.active_sequence,
                            _time=_time)
 
@@ -34,9 +35,9 @@ def register_slave():
     return jsonify(success=True)
 
 
-@app.route('/master/sequence/publish', methods=['POST'])
-def publish_offsets():
-    master.publish_offsets()
+@app.route('/master/sequence/set-sequence', methods=['POST'])
+def set_sequence():
+    master.set_active_sequence(request.form['active_sequence'])
     return redirect('/')
 
 
@@ -57,6 +58,7 @@ def stop_execution():
 
 
 if __name__ == '__main__':
-    master = StrobeMaster(sys.argv[1], sys.argv[2])
+    sequence_dir = sys.argv[1] if len(sys.argv) > 1 else '../../sequence/test_sources'
+    master = StrobeMaster(sequence_dir)
 
     app.run(host='0.0.0.0')

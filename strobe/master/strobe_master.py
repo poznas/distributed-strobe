@@ -9,6 +9,7 @@ import requests
 from requests import RequestException
 
 from strobe.master.parse_utils import compute_start_time
+from strobe.master.sequence_file_scanner import scan_available_sequences
 from strobe.music_player import load_audio_file, play_music, PLAYBACK_LATENCY, init_mixer, register_countdown
 from strobe.strobe_node import StrobeNode, NodeID, NodeStatus
 from util.logger import logger
@@ -24,30 +25,19 @@ MIN_EXECUTION_WAIT_TIME = 10  # seconds
 class StrobeMaster(StrobeNode):
     nodeID: NodeID = os.getenv('STROBE_NODE_ID', MASTER_NODE_ID)
 
-    _audio_path: str = ""
-
-    subsequences: Dict[NodeID, List[int]] = {}
     _slaves: Dict[NodeID, Dict] = {}
 
-    _active_sequence_meta = {}
+    _sequence_dir: str
+    available_sequences: List[str]
 
-    def __init__(self, source_sequence_path, audio_path):
-        source_sequence = json.loads(open(source_sequence_path, 'r').read())
+    _active_sequence: Dict = {
+        # name
+        # start_time
+    }
 
-        self.compile_sequence(source_sequence)
-        self._audio_path = audio_path
-
-
-    def compile_sequence(self, source_sequence: List[dict]):
-
-        source = copy.deepcopy(source_sequence)
-        source.sort(key=lambda o: o['label'])
-
-        def offsets_alone(elements):
-            return list(map(lambda e: int(e['offset']), elements))
-
-        for ID, events in itertools.groupby(source, lambda o: o['label']):
-            self.subsequences[ID] = offsets_alone(events)
+    def __init__(self, sequence_dir):
+        self._sequence_dir = sequence_dir
+        self.available_sequences = scan_available_sequences(sequence_dir)
 
 
     def register_slave(self, node_id: NodeID, ip: str, details: Dict):
@@ -75,10 +65,29 @@ class StrobeMaster(StrobeNode):
         return list(filter(lambda s: self.slaves[s]['status'] == NodeStatus.ACTIVE.value, self._slaves.keys()))
 
 
-    def publish_offsets(self):
+    def sequence_file(self, extension: str):
+        return f"{self._sequence_dir}/{self._active_sequence['name']}.{extension}"
+
+
+    def compile_sequence(self) -> Dict[NodeID, List[int]]:
+
+        source_sequence = json.loads(open(self.sequence_file('json'), 'r').read())
+
+        source = copy.deepcopy(source_sequence)
+        source.sort(key=lambda o: o['label'])
+
+        def offsets_alone(elements):
+            return list(map(lambda e: int(e['offset']), elements))
+
+        return {ID: offsets_alone(events) for ID, events in itertools.groupby(source, lambda o: o['label'])}
+
+
+    def set_active_sequence(self, sequence_name: str):
+        self._active_sequence['name'] = sequence_name
+
         self._sequence = []
 
-        for ID, offsets in self.subsequences.items():
+        for ID, offsets in self.compile_sequence().items():
 
             if ID in self.active_slaves_ids():
                 url = f"{self._slaves[ID]['baseURL']}/slave/sequence"
@@ -87,6 +96,13 @@ class StrobeMaster(StrobeNode):
             else:
                 logger.warn(f"{ID} is not an active slave, assigning offsets to master")
                 self._sequence.extend(offsets)
+
+
+    @property
+    def active_sequence(self):
+        if self._sequence_scheduler.empty() and 'start_time' in self._active_sequence:
+            del self._active_sequence['start_time']
+        return self._active_sequence
 
 
     def register_execution(self, seconds_from_now: str, start_at: str):
@@ -105,7 +121,9 @@ class StrobeMaster(StrobeNode):
                 raise e
 
         self._sequence_scheduler.register_task(0, init_mixer)
-        self._sequence_scheduler.register_task(1, lambda: load_audio_file(self._audio_path))
+
+        audio_file = self.sequence_file('ogg')
+        self._sequence_scheduler.register_task(1, lambda: load_audio_file(audio_file))
 
         register_countdown(lambda delay_seconds, fun: self._sequence_scheduler.register_task(
             start_time_ms - PLAYBACK_LATENCY + (delay_seconds * 1000), fun))
@@ -113,13 +131,7 @@ class StrobeMaster(StrobeNode):
         self._sequence_scheduler.register_task(start_time_ms - PLAYBACK_LATENCY, play_music)
         super().register_tasks(start_time_ms)
 
-        self._active_sequence_meta['start_time'] = start_time
-
-    @property
-    def active_sequence(self):
-        if self._sequence_scheduler.empty():
-            self._active_sequence_meta = {}
-        return self._active_sequence_meta
+        self._active_sequence['start_time'] = start_time
 
 
     def stop(self):

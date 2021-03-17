@@ -59,9 +59,20 @@
     </table>
     <hr>
 
-    <form action="/master/sequence/publish" method="post">
-        <button type="submit" class="btn btn-info btn-lg">Publish</button>
+    <form action="/master/sequence/set-sequence" method="post">
+        <select name="active_sequence">
+            {% for sequence in available_sequences %}
+            <option value="{{ sequence }}">{{ sequence }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-info btn-lg">Set active sequence</button>
     </form>
+
+    {% if 'name' in active_sequence %}
+    <hr>
+    <h2>Active sequence: {{ active_sequence['name'] }}</h2>
+    <hr>
+    {% endif %}
 
     <form action="/master/execution/start" method="post">
         <label for="seconds_from_now">Seconds from now:</label>
