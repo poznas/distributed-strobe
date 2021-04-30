@@ -6,10 +6,10 @@ from strobe.strobe_node import StrobeNode, NodeID
 from util.network_utils import host_ip
 
 
-class StrobeSlave(StrobeNode):
+class StrobeWorker(StrobeNode):
 
     @staticmethod
-    def slave_id() -> NodeID:
+    def worker_id() -> NodeID:
         return os.getenv('STROBE_NODE_ID', host_ip()[-1])
 
     def set_sequence(self, sequence: List[int]):

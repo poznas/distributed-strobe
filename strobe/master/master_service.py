@@ -18,20 +18,20 @@ def _time(timestamp: float):
 @app.route('/', methods=['GET'])
 def master_ui():
     return render_template('index.html',
-                           slaves=master.slaves.items(),
+                           workers=master.workers.items(),
                            available_sequences=master.available_sequences,
                            active_sequence=master.active_sequence,
                            _time=_time)
 
 
-@app.route('/master/slaves/<slave_id>', methods=['GET'])
-def slave_details_ui(slave_id):
-    return render_template('slave_details.html', slave=master.slaves[slave_id])
+@app.route('/master/workers/<worker_id>', methods=['GET'])
+def worker_details_ui(worker_id):
+    return render_template('worker_details.html', worker=master.workers[worker_id])
 
 
-@app.route('/master/slaves', methods=['PUT'])
-def register_slave():
-    master.register_slave(request.args.get('node_id'), request.remote_addr, request.get_json(force=True))
+@app.route('/master/workers', methods=['PUT'])
+def register_worker():
+    master.register_worker(request.args.get('node_id'), request.remote_addr, request.get_json(force=True))
     return jsonify(success=True)
 
 
