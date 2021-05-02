@@ -9,16 +9,16 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    <title>Slave: {{ slave['ip'] }}</title>
+    <title>Worker: {{ worker['ip'] }}</title>
 </head>
 <body>
 
 <div class="container">
-    <h2>Slave: {{ slave['ip'] }}</h2>
+    <h2>Worker: {{ worker['ip'] }}</h2>
     <hr>
 
     <h4>ifconfig wlan0:</h4>
-    {% for field, value in slave['wifi'].items() %}
+    {% for field, value in worker['wifi'].items() %}
     <div class="row">
         <div class="col-sm">
             <b>{{ field }}</b>
@@ -32,7 +32,7 @@
     <hr>
 
     <h4>chronyc tracking:</h4>
-    {% for field, value in slave['chrony'].items() %}
+    {% for field, value in worker['chrony'].items() %}
     <div class="row">
         <div class="col-sm">
             <b>{{ field }}</b>

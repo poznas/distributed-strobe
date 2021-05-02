@@ -25,7 +25,7 @@ MIN_EXECUTION_WAIT_TIME = 10  # seconds
 class StrobeMaster(StrobeNode):
     nodeID: NodeID = os.getenv('STROBE_NODE_ID', MASTER_NODE_ID)
 
-    _slaves: Dict[NodeID, Dict] = {}
+    _workers: Dict[NodeID, Dict] = {}
 
     _sequence_dir: str
     available_sequences: List[str]
@@ -40,29 +40,29 @@ class StrobeMaster(StrobeNode):
         self.available_sequences = scan_available_sequences(sequence_dir)
 
 
-    def register_slave(self, node_id: NodeID, ip: str, details: Dict):
-        if node_id not in self.slaves:
-            self._slaves[node_id] = {'ip': ip, 'baseURL': f"{SLAVE_PROTOCOL}://{ip}:{SLAVE_PORT}",
+    def register_worker(self, node_id: NodeID, ip: str, details: Dict):
+        if node_id not in self.workers:
+            self._workers[node_id] = {'ip': ip, 'baseURL': f"{SLAVE_PROTOCOL}://{ip}:{SLAVE_PORT}",
                                      'wifi': {}, 'chrony': {}}
 
         for metric, data in details.items():
-            self._slaves[node_id][metric] = data
+            self._workers[node_id][metric] = data
 
-        self._slaves[node_id]['last_update'] = time.time()
-        self._slaves[node_id]['status'] = NodeStatus.ACTIVE.value
+        self._workers[node_id]['last_update'] = time.time()
+        self._workers[node_id]['status'] = NodeStatus.ACTIVE.value
 
 
     @property
-    def slaves(self):
-        for node_id, data in self._slaves.items():
+    def workers(self):
+        for node_id, data in self._workers.items():
             if (time.time() - data['last_update']) > SLAVE_ACTIVE_STATUS_TIMEOUT:
                 data['status'] = NodeStatus.LOST.value
 
-        return self._slaves
+        return self._workers
 
 
-    def active_slaves_ids(self) -> List[str]:
-        return list(filter(lambda s: self.slaves[s]['status'] == NodeStatus.ACTIVE.value, self._slaves.keys()))
+    def active_workers_ids(self) -> List[str]:
+        return list(filter(lambda s: self.workers[s]['status'] == NodeStatus.ACTIVE.value, self._workers.keys()))
 
 
     def sequence_file(self, extension: str):
@@ -89,12 +89,12 @@ class StrobeMaster(StrobeNode):
 
         for ID, offsets in self.compile_sequence().items():
 
-            if ID in self.active_slaves_ids():
-                url = f"{self._slaves[ID]['baseURL']}/slave/sequence"
+            if ID in self.active_workers_ids():
+                url = f"{self._workers[ID]['baseURL']}/worker/sequence"
                 rs = requests.put(url, json=offsets)
                 logger.info(f"PUT {url} [{len(offsets)}] -> {rs.status_code}")
             else:
-                logger.warn(f"{ID} is not an active slave, assigning offsets to master")
+                logger.warn(f"{ID} is not an active worker, assigning offsets to master")
                 self._sequence.extend(offsets)
 
 
@@ -110,8 +110,8 @@ class StrobeMaster(StrobeNode):
         start_time = compute_start_time(seconds_from_now, start_at)
         start_time_ms = start_time * 1000
 
-        for ID in self.active_slaves_ids():
-            url = f"{self._slaves[ID]['baseURL']}/slave/execution?start_time={start_time_ms}"
+        for ID in self.active_workers_ids():
+            url = f"{self._workers[ID]['baseURL']}/worker/execution?start_time={start_time_ms}"
             try:
                 rs = requests.post(url)
                 logger.info(f"POST {url} -> {rs.status_code}")
@@ -137,8 +137,8 @@ class StrobeMaster(StrobeNode):
     def stop(self):
         super().stop()
 
-        for ID in self.active_slaves_ids():
-            url = f"{self._slaves[ID]['baseURL']}/slave/execution"
+        for ID in self.active_workers_ids():
+            url = f"{self._workers[ID]['baseURL']}/worker/execution"
             try:
                 rs = requests.delete(url)
                 logger.info(f"DELETE {url} -> {rs.status_code}")

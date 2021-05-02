@@ -54,7 +54,7 @@ node_id: NodeID or None = None
 def heartbeat(sc=s):
     s.enter(SLEEP_PERIOD, 1, heartbeat, (sc,))
 
-    url = f"{MASTER_HOST}/master/slaves?node_id={node_id}"
+    url = f"{MASTER_HOST}/master/workers?node_id={node_id}"
 
     try:
         details = details_provider.data()
